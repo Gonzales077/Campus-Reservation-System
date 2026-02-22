@@ -29,7 +29,8 @@
 
                         <div class="mb-3">
                             <label for="location" class="form-label">Location *</label>
-                            <input type="text" class="form-control @error('location') is-invalid @enderror" id="location" name="location" value="{{ old('location') }}" required>
+                            <input type="text" class="form-control @error('location') is-invalid @enderror" id="location" name="location" value="{{ old('location') }}" placeholder="e.g., Building A, Room 101" required>
+                            <small class="form-text text-muted">Enter the facility location name or address. Coordinates will be automatically detected.</small>
                             @error('location')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror

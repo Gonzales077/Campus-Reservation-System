@@ -215,6 +215,19 @@
                                 </div>
                             </div>
                             
+                            @if($reservation->requested_date)
+                            <div class="detail-row">
+                                <div class="detail-label">
+                                    <i class="fas fa-calendar-alt"></i>
+                                    <span>Requested Date:</span>
+                                </div>
+                                <div class="detail-value">
+                                    <strong>{{ $reservation->requested_date->format('F d, Y') }}</strong>
+                                    <span class="detail-meta">({{ $reservation->requested_date->diffForHumans() }})</span>
+                                </div>
+                            </div>
+                            @endif
+                            
                             <div class="detail-row">
                                 <div class="detail-label">
                                     <i class="fas fa-calendar"></i>
@@ -242,8 +255,11 @@
                     </div>
                     
                     <div class="reservation-footer">
+                        <a href="{{ route('reservations.show', $reservation) }}" class="btn btn-sm btn-info me-2">
+                            <i class="fas fa-eye"></i> View Details & Map
+                        </a>
                         @if($reservation->status === 'pending')
-                        <form action="{{ route('reservations.destroy', $reservation) }}" method="POST">
+                        <form action="{{ route('reservations.destroy', $reservation) }}" method="POST" style="display:inline;">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="cancel-button" onclick="return confirm('Are you sure you want to cancel this reservation?')">

@@ -36,6 +36,29 @@
                         <input type="hidden" name="facility_id" value="<?php echo e($facility->id); ?>">
 
                         <div class="mb-3">
+                            <label for="requested_date" class="form-label">When would you like to use this facility? *</label>
+                            <input type="date" class="form-control <?php $__errorArgs = ['requested_date'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>" id="requested_date" name="requested_date" value="<?php echo e(old('requested_date')); ?>" required>
+                            <small class="form-text text-muted">Please select a date for your facility request</small>
+                            <?php $__errorArgs = ['requested_date'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                                <div class="invalid-feedback"><?php echo e($message); ?></div>
+                            <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
+                        </div>
+
+                        <div class="mb-3">
                             <label for="description" class="form-label">What will you use this facility for? *</label>
                             <textarea class="form-control <?php $__errorArgs = ['description'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');

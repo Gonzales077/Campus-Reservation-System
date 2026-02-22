@@ -13,12 +13,14 @@ class Reservation extends Model
         'guest_name',
         'guest_contact',
         'description',
+        'requested_date',
         'status',
         'available_date',
         'notes',
     ];
 
     protected $casts = [
+        'requested_date' => 'date',
         'available_date' => 'date',
     ];
 

@@ -16,6 +16,8 @@ class Facility extends Model
         'available_hours',
         'status',
         'created_by',
+        'latitude',
+        'longitude',
     ];
 
     protected $casts = [

@@ -8,6 +8,42 @@ use Illuminate\Http\Request;
 class FacilityController extends Controller
 {
     /**
+     * Geocode location using OpenStreetMap Nominatim API
+     */
+    private function geocodeLocation($location)
+    {
+        try {
+            $url = 'https://nominatim.openstreetmap.org/search?q=' . urlencode($location . ', Sta. Lucia, Pampanga, Philippines') . '&format=json&limit=1';
+            
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+            curl_setopt($ch, CURLOPT_USERAGENT, 'HCC-Facilities-App/1.0');
+            
+            $response = curl_exec($ch);
+            curl_close($ch);
+            
+            if ($response) {
+                $results = json_decode($response, true);
+                if (!empty($results) && isset($results[0]['lat']) && isset($results[0]['lon'])) {
+                    return [
+                        'latitude' => (float)$results[0]['lat'],
+                        'longitude' => (float)$results[0]['lon']
+                    ];
+                }
+            }
+        } catch (\Exception $e) {
+            \Log::error('Geocoding error: ' . $e->getMessage());
+        }
+        
+        // Default to school center if geocoding fails
+        return [
+            'latitude' => 15.0879,
+            'longitude' => 120.8544
+        ];
+    }
+    /**
      * Display a listing of the resource.
      */
     public function index()
@@ -37,6 +73,10 @@ class FacilityController extends Controller
             'available_hours' => 'required|integer|min:1',
         ]);
 
+        // Auto-geocode the location
+        $coordinates = $this->geocodeLocation($validated['location']);
+        $validated['latitude'] = $coordinates['latitude'];
+        $validated['longitude'] = $coordinates['longitude'];
         $validated['created_by'] = auth()->id();
 
         Facility::create($validated);
@@ -73,6 +113,13 @@ class FacilityController extends Controller
             'available_hours' => 'required|integer|min:1',
             'status' => 'required|in:active,inactive',
         ]);
+
+        // Re-geocode if location changed
+        if ($validated['location'] !== $facility->location) {
+            $coordinates = $this->geocodeLocation($validated['location']);
+            $validated['latitude'] = $coordinates['latitude'];
+            $validated['longitude'] = $coordinates['longitude'];
+        }
 
         $facility->update($validated);
 

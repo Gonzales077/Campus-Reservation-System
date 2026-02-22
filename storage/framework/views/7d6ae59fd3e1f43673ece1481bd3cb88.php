@@ -215,6 +215,19 @@
                                 </div>
                             </div>
                             
+                            <?php if($reservation->requested_date): ?>
+                            <div class="detail-row">
+                                <div class="detail-label">
+                                    <i class="fas fa-calendar-alt"></i>
+                                    <span>Requested Date:</span>
+                                </div>
+                                <div class="detail-value">
+                                    <strong><?php echo e($reservation->requested_date->format('F d, Y')); ?></strong>
+                                    <span class="detail-meta">(<?php echo e($reservation->requested_date->diffForHumans()); ?>)</span>
+                                </div>
+                            </div>
+                            <?php endif; ?>
+                            
                             <div class="detail-row">
                                 <div class="detail-label">
                                     <i class="fas fa-calendar"></i>
@@ -243,8 +256,11 @@
                     </div>
                     
                     <div class="reservation-footer">
+                        <a href="<?php echo e(route('reservations.show', $reservation)); ?>" class="btn btn-sm btn-info me-2">
+                            <i class="fas fa-eye"></i> View Details & Map
+                        </a>
                         <?php if($reservation->status === 'pending'): ?>
-                        <form action="<?php echo e(route('reservations.destroy', $reservation)); ?>" method="POST">
+                        <form action="<?php echo e(route('reservations.destroy', $reservation)); ?>" method="POST" style="display:inline;">
                             <?php echo csrf_field(); ?>
                             <?php echo method_field('DELETE'); ?>
                             <button type="submit" class="cancel-button" onclick="return confirm('Are you sure you want to cancel this reservation?')">

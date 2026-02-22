@@ -4,6 +4,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FacilityController;
 use App\Http\Controllers\ReservationController;
+use App\Http\Controllers\MessagesController;
+use App\Http\Controllers\MapController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Models\Facility;
@@ -11,7 +13,10 @@ use App\Models\Facility;
 Route::get('/', function () {
     $facilities = Facility::where('status', 'active')->get();
     return view('welcome', compact('facilities'));
-});
+})->name('welcome');
+
+// Public facilities map
+Route::get('/map', [MapController::class, 'index'])->name('map.index');
 
 // Authentication routes
 Route::post('/register', [RegisterController::class, 'register'])->name('register');
@@ -31,6 +36,10 @@ Route::middleware(['auth'])->group(function () {
     
     // Admin Dashboard
     Route::get('/admin/dashboard', [DashboardController::class, 'adminDashboard'])->middleware('is.admin')->name('admin.dashboard');
+
+    // Admin: view messages
+    Route::get('/admin/messages', [MessagesController::class, 'index'])->middleware('is.admin')->name('admin.messages.index');
+    Route::get('/admin/messages/{message}', [MessagesController::class, 'show'])->middleware('is.admin')->name('admin.messages.show');
     
     // Facility CRUD (Admin only)
     Route::middleware('is.admin')->group(function () {
@@ -42,6 +51,7 @@ Route::middleware(['auth'])->group(function () {
     
     // Reservation routes for authenticated users
     Route::delete('/reservations/{reservation}', [ReservationController::class, 'destroy'])->name('reservations.destroy');
+    Route::get('/reservations/{reservation}', [ReservationController::class, 'show'])->name('reservations.show');
     
     // Approve/Reject Reservations (Admin only)
     Route::middleware('is.admin')->group(function () {
@@ -53,4 +63,9 @@ Route::middleware(['auth'])->group(function () {
 // Public reservation routes (no auth required)
 Route::get('/reservations/create', [ReservationController::class, 'create'])->name('reservations.create');
 Route::post('/reservations', [ReservationController::class, 'store'])->name('reservations.store');
+
+// Public contact form: store message
+Route::post('/messages', [MessagesController::class, 'store'])->name('messages.store');
+
+
 

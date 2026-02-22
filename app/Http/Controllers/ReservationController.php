@@ -79,7 +79,10 @@ class ReservationController extends Controller
      */
     public function show(Reservation $reservation)
     {
-        $this->authorize('view', $reservation);
+        // Only allow users to view their own reservations or admins
+        if (auth()->id() !== $reservation->user_id && !auth()->user()->isAdmin()) {
+            abort(403, 'Unauthorized action.');
+        }
         return view('reservations.show', compact('reservation'));
     }
 
@@ -88,7 +91,10 @@ class ReservationController extends Controller
      */
     public function edit(Reservation $reservation)
     {
-        $this->authorize('update', $reservation);
+        // Only allow users to edit their own reservations or admins
+        if (auth()->id() !== $reservation->user_id && !auth()->user()->isAdmin()) {
+            abort(403, 'Unauthorized action.');
+        }
         return view('reservations.edit', compact('reservation'));
     }
 
@@ -97,7 +103,10 @@ class ReservationController extends Controller
      */
     public function update(Request $request, Reservation $reservation)
     {
-        $this->authorize('update', $reservation);
+        // Only allow users to update their own reservations or admins
+        if (auth()->id() !== $reservation->user_id && !auth()->user()->isAdmin()) {
+            abort(403, 'Unauthorized action.');
+        }
 
         $validated = $request->validate([
             'status' => 'required|in:pending,approved,rejected,cancelled',

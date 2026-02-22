@@ -37,6 +37,15 @@
                         <input type="hidden" name="facility_id" value="{{ $facility->id }}">
 
                         <div class="mb-3">
+                            <label for="requested_date" class="form-label">When would you like to use this facility? *</label>
+                            <input type="date" class="form-control @error('requested_date') is-invalid @enderror" id="requested_date" name="requested_date" value="{{ old('requested_date') }}" required>
+                            <small class="form-text text-muted">Please select a date for your facility request</small>
+                            @error('requested_date')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="mb-3">
                             <label for="description" class="form-label">What will you use this facility for? *</label>
                             <textarea class="form-control @error('description') is-invalid @enderror" id="description" name="description" rows="4" placeholder="Please describe your intended use of the facility..." required>{{ old('description') }}</textarea>
                             @error('description')

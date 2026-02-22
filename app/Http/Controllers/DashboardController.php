@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Facility;
 use App\Models\Reservation;
+use App\Models\Message;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
@@ -32,6 +33,8 @@ class DashboardController extends Controller
         $approvedReservations = Reservation::whereIn('facility_id', $facilities->pluck('id'))->where('status', 'approved')->get();
         $allReservations = Reservation::whereIn('facility_id', $facilities->pluck('id'))->latest()->get();
 
-        return view('dashboards.admin', compact('facilities', 'pendingReservations', 'approvedReservations', 'allReservations'));
+        $unreadMessagesCount = Message::whereNull('read_at')->count();
+
+        return view('dashboards.admin', compact('facilities', 'pendingReservations', 'approvedReservations', 'allReservations', 'unreadMessagesCount'));
     }
 }
