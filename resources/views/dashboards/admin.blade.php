@@ -27,6 +27,18 @@
                             <span class="btn-sublabel">Add Facility</span>
                         </div>
                     </a>
+                    <a href="{{ route('admin.messages.index') }}" class="header-action-btn ms-2 position-relative" style="background:#fff; color:#333;">
+                        <div class="btn-icon-wrapper">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <div class="btn-content">
+                            <span class="btn-label">Messages</span>
+                            <span class="btn-sublabel">Contact Inbox</span>
+                            @if(isset($unreadMessagesCount) && $unreadMessagesCount > 0)
+                                <span class="message-badge" style="display:inline-block;background:#e53935;color:#fff;padding:2px 6px;border-radius:12px;margin-left:8px;font-size:12px;">{{ $unreadMessagesCount }}</span>
+                            @endif
+                        </div>
+                    </a>
                 </div>
             </div>
         </div>

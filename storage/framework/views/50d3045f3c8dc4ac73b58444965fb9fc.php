@@ -62,7 +62,8 @@ if (isset($message)) { $__messageOriginal = $message; }
 $message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
 if (isset($__messageOriginal)) { $message = $__messageOriginal; }
 endif;
-unset($__errorArgs, $__bag); ?>" id="location" name="location" value="<?php echo e(old('location')); ?>" required>
+unset($__errorArgs, $__bag); ?>" id="location" name="location" value="<?php echo e(old('location')); ?>" placeholder="e.g., Building A, Room 101" required>
+                            <small class="form-text text-muted">Enter the facility location name or address. Coordinates will be automatically detected.</small>
                             <?php $__errorArgs = ['location'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
 if ($__bag->has($__errorArgs[0])) :

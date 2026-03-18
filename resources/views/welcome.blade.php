@@ -24,10 +24,15 @@
                         <a href="#home">
                             <i class="fas fa-home"></i> Home
                         </a>
-                    </li>
-                    <li>
+    
+            
                         <a href="#about">
                             <i class="fas fa-info-circle"></i> About
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#facilities-map">
+                            <i class="fas fa-map"></i> Map
                         </a>
                     </li>
                     <li>
@@ -182,6 +187,26 @@
         </div>
     </div>
 
+    <!-- Facilities Map Section -->
+    <div id="facilities-map" class="facilities-map-section">
+        <div class="container">
+            <div style="text-align: center; margin-bottom: 40px;">
+                <h2 style="color: #1a3a52; font-weight: 700; margin-bottom: 10px;"><i class="fas fa-map-location-dot"></i> Explore Our Facilities</h2>
+                <p class="subtitle-text">View all available facilities on the interactive map below and plan your visit with ease</p>
+            </div>
+
+            <div class="map-container" style="border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(26, 58, 82, 0.15); margin-bottom: 40px; border: 2px solid #e8f0f7;">
+                <div id="welcomeMap" style="height: 600px;"></div>
+            </div>
+
+            <div style="text-align: center; margin-top: 30px;">
+                <button type="button" class="cta-button" data-bs-toggle="modal" data-bs-target="#fullMapModal" style="display: inline-block; padding: 12px 30px; background: linear-gradient(135deg, #1a3a52 0%, #2d5a7b 100%); color: white; text-decoration: none; border-radius: 6px; font-weight: 600; transition: all 0.3s ease;">
+                    <i class="fas fa-expand"></i> View Full Interactive Map
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Contact Section -->
     <div id="contact" class="contact-section">
         <div class="container">
@@ -224,18 +249,18 @@
                 <div class="col-lg-8 mb-4">
                     <div class="contact-form-card">
                         <h4><i class="fas fa-paper-plane"></i> Send Us a Message</h4>
-                        <form action="#" method="POST">
+                        <form action="{{ route('messages.store') }}" method="POST">
                             @csrf
                             <div class="row">
                                 <div class="col-md-6">
-                                    <input type="text" class="contact-input" placeholder="Your Full Name" required>
+                                    <input name="name" type="text" class="contact-input" placeholder="Your Full Name" required>
                                 </div>
                                 <div class="col-md-6">
-                                    <input type="email" class="contact-input" placeholder="Your Email Address" required>
+                                    <input name="email" type="email" class="contact-input" placeholder="Your Email Address" required>
                                 </div>
                             </div>
-                            <input type="text" class="contact-input" placeholder="Subject" required>
-                            <textarea class="contact-textarea" placeholder="Your Message" required></textarea>
+                            <input name="subject" type="text" class="contact-input" placeholder="Subject" required>
+                            <textarea name="message" class="contact-textarea" placeholder="Your Message" required></textarea>
                             <button type="submit" class="btn-contact">
                                 <i class="fas fa-paper-plane"></i> Send Message
                             </button>
@@ -567,13 +592,242 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+    <!-- Leaflet JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+
     <script>
+        // Initialize welcome page map
+        function initWelcomeMap() {
+            const schoolLat = 15.0934532;
+            const schoolLng = 120.7693744;
+
+            const map = L.map('welcomeMap').setView([schoolLat, schoolLng], 17);
+
+            // Standard OpenStreetMap with detailed buildings and labels
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                minZoom: 1,
+                attribution: '© OpenStreetMap contributors',
+                className: 'leaflet-tiles'
+            }).addTo(map);
+
+            // Get all active facilities (not filtered)
+            const allFacilities = @json($facilities);
+            
+            // Filter only facilities with valid coordinates
+            const facilities = allFacilities.filter(f => f.latitude && f.longitude);
+
+            // Custom facility icon
+            const facilityIcon = L.icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                iconSize: [32, 41],
+                iconAnchor: [16, 41],
+                popupAnchor: [0, -41],
+                shadowSize: [41, 41]
+            });
+
+            // HCC Campus marker with gold color - using standard Leaflet marker
+            const campusIcon = L.icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-gold.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                iconSize: [40, 56],
+                iconAnchor: [20, 56],
+                popupAnchor: [0, -56],
+                shadowSize: [41, 41]
+            });
+
+            // Add HCC Campus marker with detailed popup
+            const campusMarker = L.marker([schoolLat, schoolLng], {icon: campusIcon})
+                .addTo(map)
+                .bindPopup(`
+                    <div style="min-width: 240px; text-align: center; font-family: 'Poppins', sans-serif;">
+                        <div style="background: linear-gradient(135deg, #1a3a52 0%, #2d5a7b 100%); color: white; padding: 12px; border-radius: 4px 4px 0 0; margin: -4px -4px 12px -4px;">
+                            <h6 style="margin: 0; font-size: 16px; font-weight: 700;"><i class="fas fa-landmark"></i> Holy Cross College</h6>
+                            <p style="margin: 4px 0 0 0; font-size: 11px; color: #ffd700;">Main Campus</p>
+                        </div>
+                        <p style="margin: 0 0 8px 0; font-size: 12px; color: #555; font-style: italic;">Baliwag-Candaba-Santa Ana Road<br/>Villa Luisa Subdivision, Santa Ana, Pampanga</p>
+                        <div style="border-left: 3px solid #d4af37; padding-left: 10px; text-align: left; margin: 8px 0;">
+                            <p style="margin: 4px 0; font-size: 12px;"><strong>📍 Headquarters</strong></p>
+                            <p style="margin: 4px 0; font-size: 11px; color: #666;">All facilities accessible from here</p>
+                        </div>
+                    </div>
+                `, {maxWidth: 300});
+
+            // Add a circle around campus to show the main hub
+            L.circle([schoolLat, schoolLng], {
+                color: '#d4af37',
+                fill: true,
+                fillColor: '#d4af37',
+                fillOpacity: 0.1,
+                weight: 2,
+                radius: 300
+            }).addTo(map);
+
+            let bounds = L.latLngBounds([[schoolLat, schoolLng], [schoolLat, schoolLng]]);
+
+            facilities.forEach(function(facility) {
+                if (facility.latitude && facility.longitude) {
+                    bounds.extend([facility.latitude, facility.longitude]);
+                    
+                    // Calculate distance from campus center
+                    function haversineDistance(lat1, lon1, lat2, lon2) {
+                        const R = 6371; // Earth's radius in km
+                        const dLat = (lat2 - lat1) * Math.PI / 180;
+                        const dLon = (lon2 - lon1) * Math.PI / 180;
+                        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                                  Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                                  Math.sin(dLon/2) * Math.sin(dLon/2);
+                        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                        return (R * c).toFixed(2);
+                    }
+                    
+                    const distance = haversineDistance(schoolLat, schoolLng, facility.latitude, facility.longitude);
+                    
+                    const marker = L.marker([facility.latitude, facility.longitude], {icon: facilityIcon}).addTo(map);
+                    marker.bindPopup(`
+                        <div style="min-width: 260px; font-family: 'Poppins', sans-serif;">
+                            <div style="background: linear-gradient(135deg, #1a3a52 0%, #2d5a7b 100%); color: white; padding: 10px; border-radius: 4px 4px 0 0; margin: -4px -4px 8px -4px;">
+                                <h6 style="margin: 0; font-size: 14px; font-weight: 700;"><i class="fas fa-door-open"></i> ${facility.name}</h6>
+                            </div>
+                            <p style="margin: 0 0 8px 0; font-size: 12px; color: #555; font-style: italic;">${facility.description.substring(0, 80)}${facility.description.length > 80 ? '...' : ''}</p>
+                            <div style="border-left: 3px solid #d4af37; padding-left: 10px; margin: 8px 0;">
+                                <p style="margin: 4px 0; font-size: 12px;"><strong>📍 Location:</strong> ${facility.location}</p>
+                                <p style="margin: 4px 0; font-size: 12px;"><strong>📏 Distance:</strong> ${distance} km from campus</p>
+                                <p style="margin: 4px 0; font-size: 12px;"><strong>👥 Capacity:</strong> ${facility.capacity} people</p>
+                                <p style="margin: 4px 0 8px 0; font-size: 12px;"><strong>⏰ Hours:</strong> ${facility.available_hours} hours/day</p>
+                            </div>
+                            <a href="/reservations/create?facility=${facility.id}" style="display:inline-block; padding: 8px 14px; background: #1a3a52; color: white; text-decoration: none; border-radius: 4px; font-size: 12px; font-weight: 600; width: 100%; text-align: center; box-sizing: border-box;">📅 Reserve Now</a>
+                        </div>
+                    `);
+                }
+            });
+
+            // Get user location
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        const userLat = position.coords.latitude;
+                        const userLng = position.coords.longitude;
+                        
+                        bounds.extend([userLat, userLng]);
+                        
+                        // Create user marker with improved styling
+                        const userIcon = L.icon({
+                            iconUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMiIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDI0IDI0Ij48Y2lyY2xlIGN4PSIxMiIgY3k9IjEyIiByPSI4IiBmaWxsPSIjMjJjNTVlIi8+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iNSIgZmlsbD0iI2ZmZiIvPjwvc3ZnPg==',
+                            iconSize: [32, 40],
+                            iconAnchor: [16, 40],
+                            popupAnchor: [0, -40]
+                        });
+                        
+                        L.marker([userLat, userLng], {icon: userIcon})
+                            .addTo(map)
+                            .bindPopup('<div style="text-align: center; font-weight: 600; color: #0066cc;"><i class="fas fa-location-dot"></i> <strong>Your Location</strong><br/><small style="font-weight: normal; color: #666;">Lat: ' + userLat.toFixed(4) + '<br/>Lng: ' + userLng.toFixed(4) + '</small></div>');
+                        
+                        // Fit map bounds with padding
+                        map.fitBounds(bounds, {padding: [50, 50]});
+                    },
+                    function(error) {
+                        console.log('Geolocation not available:', error.message);
+                        // Fit bounds without user location
+                        if (facilities.length > 0) {
+                            map.fitBounds(bounds, {padding: [50, 50]});
+                        }
+                    }
+                );
+            } else {
+                // Fit bounds if geolocation not available
+                if (facilities.length > 0) {
+                    map.fitBounds(bounds, {padding: [50, 50]});
+                }
+            }
+        }
+
+        // Initialize full-map modal (no facility markers)
+        let fullMapModalInitialized = false;
+        let fullMapModalMap = null;
+        function initFullMapModal() {
+            const schoolLat = 15.0934532;
+            const schoolLng = 120.7693744;
+
+            fullMapModalMap = L.map('fullMapModalMap').setView([schoolLat, schoolLng], 17);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                minZoom: 1,
+                attribution: '© OpenStreetMap contributors',
+                className: 'leaflet-tiles'
+            }).addTo(fullMapModalMap);
+
+            const campusIcon = L.icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-gold.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                iconSize: [40, 56],
+                iconAnchor: [20, 56],
+                popupAnchor: [0, -56],
+                shadowSize: [41, 41]
+            });
+
+            L.marker([schoolLat, schoolLng], {icon: campusIcon}).addTo(fullMapModalMap)
+                .bindPopup(`<div style="min-width:220px; font-family: 'Poppins', sans-serif;"><div style="background: linear-gradient(135deg, #1a3a52 0%, #2d5a7b 100%); color: white; padding: 10px; border-radius:4px;"><strong><i class='fas fa-landmark'></i> Holy Cross College</strong></div><div style="padding:8px 6px; font-size:12px; color:#555;">Baliwag-Candaba-Santa Ana Road<br/>Villa Luisa Subdivision, Santa Ana, Pampanga</div></div>`);
+
+            // Circle for campus hub
+            L.circle([schoolLat, schoolLng], {
+                color: '#d4af37',
+                fill: true,
+                fillColor: '#d4af37',
+                fillOpacity: 0.08,
+                weight: 2,
+                radius: 300
+            }).addTo(fullMapModalMap);
+
+            // Attempt to show user location in modal map as well
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    const userLat = position.coords.latitude;
+                    const userLng = position.coords.longitude;
+                    const userIcon = L.icon({
+                        iconUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMiIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDI0IDI0Ij48Y2lyY2xlIGN4PSIxMiIgY3k9IjEyIiByPSI4IiBmaWxsPSIjMjJjNTVlIi8+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iNSIgZmlsbD0iI2ZmZiIvPjwvc3ZnPg==',
+                        iconSize: [32, 40],
+                        iconAnchor: [16, 40],
+                        popupAnchor: [0, -40]
+                    });
+                    L.marker([userLat, userLng], {icon: userIcon}).addTo(fullMapModalMap)
+                        .bindPopup('<div style="text-align:center; font-weight:600; color:#0066cc;"><i class="fas fa-location-dot"></i> <strong>Your Location</strong><br/><small style="font-weight:normal; color:#666;">Lat: ' + userLat.toFixed(4) + '<br/>Lng: ' + userLng.toFixed(4) + '</small></div>');
+                    fullMapModalMap.setView([userLat, userLng], 15);
+                }, function(){
+                    // ignore errors
+                });
+            }
+        }
+
         // Auto-show login modal if there are login errors
         document.addEventListener('DOMContentLoaded', function() {
             @if($errors->any())
                 const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
                 loginModal.show();
             @endif
+
+            // Initialize map
+            initWelcomeMap();
+
+            // Prepare full map modal: initialize on first show and resize on subsequent shows
+            const fullMapModalEl = document.getElementById('fullMapModal');
+            if (fullMapModalEl) {
+                fullMapModalEl.addEventListener('shown.bs.modal', function () {
+                    if (!fullMapModalInitialized) {
+                        initFullMapModal();
+                        fullMapModalInitialized = true;
+                        // allow tiles to load then invalidate size
+                        setTimeout(() => fullMapModalMap.invalidateSize(), 300);
+                    } else if (fullMapModalMap) {
+                        setTimeout(() => fullMapModalMap.invalidateSize(), 150);
+                    }
+                });
+            }
 
             // Smooth scrolling for anchor links
             document.querySelectorAll('a[href^="#"]').forEach(anchor => {
@@ -613,5 +867,21 @@
             });
         });
     </script>
+
+    <!-- Full Map Modal (opens instead of redirect) -->
+    <div class="modal fade" id="fullMapModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-fullscreen-sm-down">
+            <div class="modal-content" style="height: 90vh;">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-map"></i> Full Interactive Map</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-0" style="height: calc(100% - 56px);">
+                    <div id="fullMapModalMap" style="width:100%; height:100%;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>
