@@ -27,7 +27,7 @@ class DashboardController extends Controller
         return view('dashboards.user', compact('facilities', 'reservations'));
     }
 
-    public function adminDashboard(Request $request)
+   public function adminDashboard(Request $request)
     {
         if (!auth()->user()->isAdmin()) {
             abort(403);
@@ -35,37 +35,36 @@ class DashboardController extends Controller
 
         $facilityIds = auth()->user()->facilities->pluck('id');
 
-        // 1. PENDING RESERVATIONS + Search
-        $pendingQuery = Reservation::whereIn('facility_id', $facilityIds)->where('status', 'pending');
-        if ($request->filled('search_pending')) {
-            $pendingQuery->where(function($q) use ($request) {
-                $term = '%' . $request->search_pending . '%';
-                $q->where('reservation_number', 'like', $term)
-                  ->orWhereHas('user', fn($u) => $u->where('name', 'like', $term));
-            });
-        }
-        $pendingReservations = $pendingQuery->paginate(10, ['*'], 'pending_page')->withQueryString();
+        // 1. NORMAL PENDING RESERVATIONS (Excluding Clinic Syncs)
+        $pendingQuery = Reservation::whereIn('facility_id', $facilityIds)
+            ->where('status', 'pending')
+            ->where('description', 'NOT LIKE', 'Clinic Sync:%'); // Filter out clinic
 
-        // 2. APPROVED RESERVATIONS + Search
-        $approvedQuery = Reservation::whereIn('facility_id', $facilityIds)->where('status', 'approved');
-        if ($request->filled('search_approved')) {
-            $approvedQuery->where(function($q) use ($request) {
-                $term = '%' . $request->search_approved . '%';
+        // 2. CLINIC SYNC REQUESTS ONLY
+        $clinicSyncQuery = Reservation::whereIn('facility_id', $facilityIds)
+            ->where('status', 'pending')
+            ->where('description', 'LIKE', 'Clinic Sync:%'); // Only clinic
+
+        // Handle Search for Pending
+        if ($request->filled('search_pending')) {
+            $term = '%' . $request->search_pending . '%';
+            $pendingQuery->where(function($q) use ($term) {
                 $q->where('reservation_number', 'like', $term)
                   ->orWhereHas('user', fn($u) => $u->where('name', 'like', $term));
             });
         }
+
+        $pendingReservations = $pendingQuery->paginate(10, ['*'], 'pending_page')->withQueryString();
+        $clinicSyncs = $clinicSyncQuery->get(); // Get these for the special dashboard section
+
+        // 3. APPROVED RESERVATIONS
+        $approvedQuery = Reservation::whereIn('facility_id', $facilityIds)->where('status', 'approved');
+        // ... (Keep your existing search logic for approved)
         $approvedReservations = $approvedQuery->paginate(10, ['*'], 'approved_page')->withQueryString();
 
-        // 3. ALL RESERVATIONS HISTORY + Search
+        // 4. HISTORY
         $historyQuery = Reservation::whereIn('facility_id', $facilityIds)->latest();
-        if ($request->filled('search_history')) {
-            $historyQuery->where(function($q) use ($request) {
-                $term = '%' . $request->search_history . '%';
-                $q->where('reservation_number', 'like', $term)
-                  ->orWhereHas('user', fn($u) => $u->where('name', 'like', $term));
-            });
-        }
+        // ... (Keep your existing search logic for history)
         $allReservations = $historyQuery->paginate(10, ['*'], 'history_page')->withQueryString();
 
         $facilities = auth()->user()->facilities;
@@ -74,6 +73,7 @@ class DashboardController extends Controller
         return view('dashboards.admin', compact(
             'facilities', 
             'pendingReservations', 
+            'clinicSyncs', // Make sure this is passed to the view
             'approvedReservations', 
             'allReservations', 
             'unreadMessagesCount'

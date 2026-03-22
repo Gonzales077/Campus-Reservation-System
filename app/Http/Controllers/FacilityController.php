@@ -77,7 +77,7 @@ class FacilityController extends Controller
             ],
             'Computer Lab A' => [
                 'thumb' => 'coma1.jpg',
-                'gallery' => ['coma1.jpg', 'coma3.jpg', 'com2.jpg']
+                'gallery' => ['coma1.jpg', 'coma3.jpg', 'comp2.jpg']
             ],
             'Gymnasium' => [
                 'thumb' => 'gym1.jpg',

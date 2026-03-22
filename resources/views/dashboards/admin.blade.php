@@ -248,6 +248,152 @@
         </div>
     </div>
     @endif
+
+
+    <!-- Clinic appointments -->
+  <div class="modern-section-card" id="clinic-section">
+    <div class="section-header-modern">
+        <div class="section-title-container">
+            <div class="section-title-icon"><i class="fas fa-user-medical text-primary"></i></div>
+            <div class="section-title-content">
+                <h2 class="section-title-modern">Clinic Room Requests</h2>
+                <p class="section-subtitle">Manage synchronized appointments from the clinic system</p>
+            </div>
+        </div>
+        <div class="section-actions-modern">
+            <span class="status-count-badge badge-primary">
+                <i class="fas fa-sync-alt"></i> {{ $clinicSyncs->count() }} Pending Syncs
+            </span>
+        </div>
+    </div>
+
+    <div class="modern-table-container">
+        <table class="modern-admin-table">
+            <thead>
+                <tr>
+                    <th class="table-col-facility"><i class="fas fa-building"></i> Facility</th>
+                    <th class="table-col-guest"><i class="fas fa-user"></i> Patient</th>
+                    <th class="table-col-contact"><i class="fas fa-envelope"></i> Contact</th>
+                    <th class="table-col-description"><i class="fas fa-align-left"></i> Clinic Notes</th>
+                    <th class="table-col-actions"><i class="fas fa-cog"></i> Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($clinicSyncs as $sync)
+                <tr>
+                    <td>
+                        <div class="facility-info">
+                            <div class="facility-name">{{ $sync->facility->name ?? 'N/A' }}</div>
+                            <div class="facility-meta">
+                                <span class="facility-meta-item text-primary"><i class="fas fa-tag"></i> Clinic Reservation</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="guest-info">
+                            <div class="guest-name">{{ str_replace('CLINIC: ', '', $sync->guest_name) }}</div>
+                            <div class="guest-date">{{ \Carbon\Carbon::parse($sync->requested_date)->format('M d, Y') }}</div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="contact-info">
+                            <a href="mailto:{{ $sync->guest_contact }}" class="contact-link">
+                                <i class="fas fa-at"></i> {{ $sync->guest_contact }}
+                            </a>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="description-content" title="{{ $sync->description }}">
+                            {{ Str::limit($sync->description, 50) }}
+                        </div>
+                    </td>
+                    <td>
+                        <div class="action-buttons-modern">
+                            <button type="button" class="action-btn" style="background: var(--background-tertiary); color: var(--hcc-blue);" data-bs-toggle="modal" data-bs-target="#detailsModal{{ $sync->id }}">
+                                <i class="fas fa-eye"></i><span>Details</span>
+                            </button>
+                            
+                            <form action="{{ route('reservations.approve', $sync->id) }}" method="POST" class="inline-form-modern">
+                                @csrf
+                                <input type="hidden" name="available_date" value="{{ $sync->requested_date }}">
+                                <button type="submit" class="action-btn action-approve" onclick="return confirm('Confirm this clinic appointment?')">
+                                    <i class="fas fa-check"></i><span>Approve</span>
+                                </button>
+                            </form>
+
+                            <form action="{{ route('reservations.reject', $sync->id) }}" method="POST" class="inline-form-modern">
+                                @csrf
+                                <button type="submit" class="action-btn action-reject" onclick="return confirm('Reject this clinic request?')">
+                                    <i class="fas fa-times"></i><span>Reject</span>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                @empty
+                <tr class="no-results-row">
+                    <td colspan="5">
+                        <i class="fas fa-calendar-check"></i>
+                        No pending clinic synchronization requests found.
+                    </td>
+                </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+</div>
+@foreach($clinicSyncs as $sync)
+<div class="modal fade" id="detailsModal{{ $sync->id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-xl);">
+            <div class="modal-header" style="background: var(--hcc-blue); color: white; border-radius: var(--radius-xl) var(--radius-xl) 0 0;">
+                <h5 class="modal-title font-weight-bold"><i class="fas fa-user-medical mr-2"></i>Patient Information</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row p-3 rounded mb-3" style="background: var(--background-secondary); border: 1px solid var(--border-light);">
+                    <div class="col-6 mb-3">
+                        <small class="text-muted d-block text-uppercase font-weight-bold" style="font-size: 0.65rem;">Patient Name</small>
+                        <span class="font-weight-bold text-dark">{{ str_replace('CLINIC: ', '', $sync->guest_name) }}</span>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <small class="text-muted d-block text-uppercase font-weight-bold" style="font-size: 0.65rem;">Email Address</small>
+                        <span class="text-dark">{{ $sync->guest_contact }}</span>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted d-block text-uppercase font-weight-bold" style="font-size: 0.65rem;">Requested Date</small>
+                        <span class="font-weight-bold text-dark">{{ \Carbon\Carbon::parse($sync->requested_date)->format('M d, Y') }}</span>
+                    </div>
+                 <div class="col-6">
+    <small class="text-muted d-block text-uppercase font-weight-bold" style="font-size: 0.65rem;">Actual Time</small>
+    <span class="font-weight-bold text-primary">
+        @if(isset($sync->actual_appointment_time) && $sync->actual_appointment_time)
+            {{-- This fetches the exact string from the clinic table --}}
+            {{ \Carbon\Carbon::createFromFormat('H:i:s', $sync->actual_appointment_time)->format('h:i A') }}
+        @else
+            {{-- Fallback if not a clinic sync or no record found --}}
+            {{ \Carbon\Carbon::parse($sync->created_at)->format('h:i A') }}
+        @endif
+    </span>
+</div>
+                </div>
+                <label class="small text-muted font-weight-bold text-uppercase" style="font-size: 0.65rem;">Reason for Visit / Clinic Notes</label>
+                <div class="border rounded p-3 bg-white shadow-sm small italic text-dark">
+                    "{{ $sync->description }}"
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-link text-muted" data-bs-dismiss="modal">Close</button>
+                <form action="{{ route('reservations.approve', $sync->id) }}" method="POST">
+                    @csrf
+                    <input type="hidden" name="available_date" value="{{ $sync->requested_date }}">
+                    <button type="submit" class="btn btn-success px-4 font-weight-bold" style="border-radius: var(--radius-md);">Approve Now</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+@endforeach
  
     <!-- Approve Modals -->
     @foreach($pendingReservations as $reservation)
@@ -374,124 +520,162 @@
  
     <!-- ===== MY FACILITIES ===== -->
     <div class="modern-section-card" id="facilities-section">
-        <div class="section-header-modern">
-            <div class="section-title-container">
-                <div class="section-title-icon"><i class="fas fa-building"></i></div>
-                <div class="section-title-content">
-                    <h2 class="section-title-modern">My Facilities</h2>
-                    <p class="section-subtitle">Manage all your facility listings</p>
+    <div class="section-header-modern">
+        <div class="section-title-container">
+            <div class="section-title-icon"><i class="fas fa-building"></i></div>
+            <div class="section-title-content">
+                <h2 class="section-title-modern">My Facilities</h2>
+                <p class="section-subtitle">Manage all your facility listings</p>
+            </div>
+        </div>
+        <div class="section-actions-modern">
+            <a href="{{ route('facilities.create') }}" class="primary-action-btn"><i class="fas fa-plus"></i><span>Add New Facility</span></a>
+        </div>
+    </div>
+
+    @if($facilities->count() > 0)
+    <div class="facilities-search-bar">
+        <div class="search-input-wrapper" style="flex:1;min-width:200px;">
+            <i class="fas fa-search"></i>
+            <input type="text" class="section-search-input" id="facilitiesSearch" placeholder="Search by name or location…">
+            <button class="clear-search" id="facilitiesClear"><i class="fas fa-times"></i></button>
+        </div>
+        <select class="section-filter-select" id="facilitiesStatusFilter">
+            <option value="all">All Status</option>
+            <option value="active">Available</option>
+            <option value="reserved">Reserved</option>
+            <option value="pending">With Pending Req.</option>
+            <option value="inactive">Inactive</option>
+        </select>
+        <div class="search-results-count" id="facilitiesCount"></div>
+    </div>
+
+    <div class="facilities-grid-modern" id="facilitiesGrid">
+        @foreach($facilities as $facility)
+        @php
+            // Logic to determine status
+            $isReserved = $facility->reservations->where('status', 'approved')->count() > 0;
+            $hasPending = $facility->reservations->where('status', 'pending')->count() > 0;
+            
+            // Determine Visual Status
+            $displayStatus = 'active';
+            if ($isReserved) {
+                $displayStatus = 'reserved';
+            } elseif ($hasPending) {
+                $displayStatus = 'pending';
+            } elseif ($facility->status !== 'active') {
+                $displayStatus = 'inactive';
+            }
+
+            $maxRequested = $facility->reservations->max('estimated_participants') ?? 0;
+            $isOverCapacity = $maxRequested > $facility->capacity;
+            $chairsNeeded = $isOverCapacity ? ($maxRequested - $facility->capacity) : 0;
+        @endphp
+
+        <div class="facility-card-modern facility-card-item {{ $isOverCapacity ? 'border-danger' : '' }} status-{{ $displayStatus }}"
+             data-name="{{ strtolower($facility->name) }}"
+             data-location="{{ strtolower($facility->location) }}"
+             data-status="{{ $displayStatus }}">
+            
+            <div class="facility-card-header">
+                <div class="facility-status-indicator">
+                    @if($displayStatus === 'reserved')
+                        <div class="status-dot" style="background-color: #ef4444;"></div>
+                        <span class="status-text text-danger">Reserved</span>
+                    @elseif($displayStatus === 'pending')
+                        <div class="status-dot" style="background-color: #f59e0b;"></div>
+                        <span class="status-text text-warning">Pending Review</span>
+                    @elseif($displayStatus === 'active')
+                        <div class="status-dot status-dot-active"></div>
+                        <span class="status-text">Available</span>
+                    @else
+                        <div class="status-dot status-dot-inactive"></div>
+                        <span class="status-text">Inactive</span>
+                    @endif
                 </div>
-            </div>
-            <div class="section-actions-modern">
-                <a href="{{ route('facilities.create') }}" class="primary-action-btn"><i class="fas fa-plus"></i><span>Add New Facility</span></a>
-            </div>
-        </div>
- 
-        @if($facilities->count() > 0)
-        <div class="facilities-search-bar">
-            <div class="search-input-wrapper" style="flex:1;min-width:200px;">
-                <i class="fas fa-search"></i>
-                <input type="text" class="section-search-input" id="facilitiesSearch" placeholder="Search by name or location…">
-                <button class="clear-search" id="facilitiesClear"><i class="fas fa-times"></i></button>
-            </div>
-            <select class="section-filter-select" id="facilitiesStatusFilter">
-                <option value="all">All Status</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-            </select>
-            <div class="search-results-count" id="facilitiesCount"></div>
-        </div>
- 
-        <div class="facilities-grid-modern" id="facilitiesGrid">
-            @foreach($facilities as $facility)
-            @php
-                $maxRequested = $facility->reservations->max('estimated_participants') ?? 0;
-                $isOverCapacity = $maxRequested > $facility->capacity;
-                $chairsNeeded = $isOverCapacity ? ($maxRequested - $facility->capacity) : 0;
-            @endphp
-            <div class="facility-card-modern facility-card-item {{ $isOverCapacity ? 'border-danger' : '' }}"
-                 data-name="{{ strtolower($facility->name) }}"
-                 data-location="{{ strtolower($facility->location) }}"
-                 data-status="{{ strtolower($facility->status) }}">
-                <div class="facility-card-header">
-                    <div class="facility-status-indicator">
-                        @if($facility->status === 'active')
-                            <div class="status-dot status-dot-active"></div><span class="status-text">Active</span>
-                        @else
-                            <div class="status-dot status-dot-inactive"></div><span class="status-text">Inactive</span>
+
+                @if($isOverCapacity)
+                    <div class="badge bg-danger pulse-animation"><i class="fas fa-exclamation-triangle"></i> Needs {{ $chairsNeeded }} Chairs</div>
+                @endif
+
+                <div class="facility-actions-dropdown">
+                    <button class="dropdown-toggle-btn"><i class="fas fa-ellipsis-v"></i></button>
+                    <div class="dropdown-menu-facility">
+                        <a href="{{ route('facilities.edit', $facility) }}" class="dropdown-item"><i class="fas fa-edit"></i><span>Edit Facility</span></a>
+                        @if(!$facility->reservations()->exists())
+                        <form action="{{ route('facilities.destroy', $facility) }}" method="POST" class="dropdown-item-form">
+                            @csrf @method('DELETE')
+                            <button type="submit" class="dropdown-item dropdown-item-danger" onclick="return confirm('Are you sure?')"><i class="fas fa-trash"></i><span>Delete</span></button>
+                        </form>
                         @endif
                     </div>
-                    @if($isOverCapacity)
-                        <div class="badge bg-danger pulse-animation"><i class="fas fa-exclamation-triangle"></i> Needs {{ $chairsNeeded }} Chairs</div>
-                    @endif
-                    <div class="facility-actions-dropdown">
-                        <button class="dropdown-toggle-btn"><i class="fas fa-ellipsis-v"></i></button>
-                        <div class="dropdown-menu-facility">
-                            <a href="{{ route('facilities.edit', $facility) }}" class="dropdown-item"><i class="fas fa-edit"></i><span>Edit Facility</span></a>
-                            @if(!$facility->reservations()->exists())
-                            <form action="{{ route('facilities.destroy', $facility) }}" method="POST" class="dropdown-item-form">
-                                @csrf @method('DELETE')
-                                <button type="submit" class="dropdown-item dropdown-item-danger" onclick="return confirm('Are you sure?')"><i class="fas fa-trash"></i><span>Delete</span></button>
-                            </form>
-                            @endif
-                        </div>
+                </div>
+            </div>
+
+            <div class="facility-card-body">
+                @if($facility->thumbnail)
+                <div class="facility-thumbnail mb-3" style="{{ $isReserved ? 'filter: grayscale(0.8); opacity: 0.7;' : '' }}">
+                    <img src="{{ asset(Str::start($facility->thumbnail, '/')) }}" 
+                         alt="{{ $facility->name }}" 
+                         style="width:100%; border-radius:12px; max-height:160px; object-fit:cover;">
+                </div>
+                @endif
+                
+                <h3 class="facility-name-modern">{{ $facility->name }}</h3>
+                <div class="facility-location"><i class="fas fa-map-marker-alt"></i><span>{{ $facility->location }}</span></div>
+                
+                <div class="facility-details-grid">
+                    <div class="detail-item">
+                        <div class="detail-icon"><i class="fas fa-users"></i></div>
+                        <div class="detail-content"><div class="detail-value">{{ $facility->capacity }}</div><div class="detail-label">Capacity</div></div>
+                    </div>
+                    <div class="detail-item {{ $isOverCapacity ? 'text-danger fw-bold' : '' }}">
+                        <div class="detail-icon"><i class="fas {{ $isOverCapacity ? 'fa-chair text-danger' : 'fa-clock' }}"></i></div>
+                        <div class="detail-content"><div class="detail-value">{{ $isOverCapacity ? $maxRequested : $facility->available_hours }}</div><div class="detail-label">{{ $isOverCapacity ? 'Max Req.' : 'Hours' }}</div></div>
                     </div>
                 </div>
-                <div class="facility-card-body">
-                    @if($facility->thumbnail)
-    <div class="facility-thumbnail mb-3">
-        {{-- Fixed: Using Str::start to ensure a clean path without the 'storage/' prefix --}}
-        <img src="{{ asset(Str::start($facility->thumbnail, '/')) }}" 
-             alt="{{ $facility->name }}" 
-             style="width:100%; border-radius:12px; max-height:160px; object-fit:cover;">
-    </div>
-@endif
-                    <h3 class="facility-name-modern">{{ $facility->name }}</h3>
-                    <div class="facility-location"><i class="fas fa-map-marker-alt"></i><span>{{ $facility->location }}</span></div>
-                    <div class="facility-details-grid">
-                        <div class="detail-item">
-                            <div class="detail-icon"><i class="fas fa-users"></i></div>
-                            <div class="detail-content"><div class="detail-value">{{ $facility->capacity }}</div><div class="detail-label">Capacity</div></div>
-                        </div>
-                        <div class="detail-item {{ $isOverCapacity ? 'text-danger fw-bold' : '' }}">
-                            <div class="detail-icon"><i class="fas {{ $isOverCapacity ? 'fa-chair text-danger' : 'fa-clock' }}"></i></div>
-                            <div class="detail-content"><div class="detail-value">{{ $isOverCapacity ? $maxRequested : $facility->available_hours }}</div><div class="detail-label">{{ $isOverCapacity ? 'Max Req.' : 'Hours' }}</div></div>
-                        </div>
-                    </div>
+            </div>
+
+            <div class="facility-card-footer">
+                <div class="reservation-count">
+                    <i class="fas fa-calendar"></i>
+                    <span>{{ $facility->reservations->count() }} Records</span>
                 </div>
-                <div class="facility-card-footer">
-                    <div class="reservation-count"><i class="fas fa-calendar"></i><span>{{ $facility->reservations->count() }}</span></div>
-                    <div class="footer-actions">
+                <div class="footer-actions">
+                    @if($isReserved)
+                        <span class="badge bg-light text-dark border"><i class="fas fa-lock"></i> Occupied</span>
+                    @else
                         @if($isOverCapacity)
-                            <a href="{{ route('chairs.order', ['facility'=>$facility->id,'needed'=>$chairsNeeded]) }}" class="btn-add-chairs text-decoration-none">
-                                <i class="fas fa-shopping-cart"></i> Add Chairs
+                            <a href="{{ route('chairs.order', ['facility'=>$facility->id,'needed'=>$chairsNeeded]) }}" class="btn-add-chairs text-decoration-none me-2">
+                                <i class="fas fa-shopping-cart"></i>
                             </a>
                         @endif
                         <a href="{{ route('facilities.edit', $facility) }}" class="edit-facility-btn"><i class="fas fa-cog"></i> Manage</a>
-                    </div>
+                    @endif
                 </div>
             </div>
-            @endforeach
         </div>
- 
-        <div id="facilitiesNoResults" style="display:none;text-align:center;padding:40px 20px;color:#94a3b8;">
-            <i class="fas fa-search" style="font-size:32px;display:block;margin-bottom:10px;color:#cbd5e1;"></i>
-            <p style="font-size:15px;margin:0;">No facilities match your search.</p>
-        </div>
- 
-        <div class="facilities-pagination" id="facilitiesPagination">
-            <div class="pagination-info-text" id="facilitiesPaginationInfo"></div>
-            <div class="pagination-buttons" id="facilitiesPaginationBtns"></div>
-        </div>
- 
-        @else
-        <div class="empty-state-modern">
-            <i class="fas fa-building fa-3x mb-3"></i>
-            <h3>No Facilities Yet</h3>
-            <a href="{{ route('facilities.create') }}" class="primary-action-btn mt-3">Create First Facility</a>
-        </div>
-        @endif
+        @endforeach
     </div>
+
+    <div id="facilitiesNoResults" style="display:none;text-align:center;padding:40px 20px;color:#94a3b8;">
+        <i class="fas fa-search" style="font-size:32px;display:block;margin-bottom:10px;color:#cbd5e1;"></i>
+        <p style="font-size:15px;margin:0;">No facilities match your search.</p>
+    </div>
+
+    <div class="facilities-pagination" id="facilitiesPagination">
+        <div class="pagination-info-text" id="facilitiesPaginationInfo"></div>
+        <div class="pagination-buttons" id="facilitiesPaginationBtns"></div>
+    </div>
+
+    @else
+    <div class="empty-state-modern">
+        <i class="fas fa-building fa-3x mb-3"></i>
+        <h3>No Facilities Yet</h3>
+        <a href="{{ route('facilities.create') }}" class="primary-action-btn mt-3">Create First Facility</a>
+    </div>
+    @endif
+</div>
  
     <!-- Google Calendar Section -->
     <div class="modern-section-card" id="google-calendar">
@@ -679,6 +863,39 @@
             setTimeout(() => toast.remove(), 500);
         }, 4000);
     });
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Approve Confirmation
+    document.querySelectorAll('.btn-approve').forEach(btn => {
+        btn.onclick = function() {
+            Swal.fire({
+                title: 'Approve Reservation?',
+                text: "This will confirm the clinic appointment for " + this.dataset.name,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#28a745',
+                confirmButtonText: 'Yes, Approve'
+            }).then((result) => { if (result.isConfirmed) this.parentElement.submit(); });
+        };
+    });
+
+    // Reject Confirmation
+    document.querySelectorAll('.btn-reject').forEach(btn => {
+        btn.onclick = function() {
+            Swal.fire({
+                title: 'Reject Reservation?',
+                text: "Are you sure you want to decline " + this.dataset.name + "?",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                confirmButtonText: 'Yes, Reject'
+            }).then((result) => { if (result.isConfirmed) this.parentElement.submit(); });
+        };
+    });
+});
 </script>
  
 <script>

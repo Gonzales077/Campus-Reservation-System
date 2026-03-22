@@ -245,6 +245,156 @@
         </div>
     </div>
     <?php endif; ?>
+
+
+    <!-- Clinic appointments -->
+  <div class="modern-section-card" id="clinic-section">
+    <div class="section-header-modern">
+        <div class="section-title-container">
+            <div class="section-title-icon"><i class="fas fa-user-medical text-primary"></i></div>
+            <div class="section-title-content">
+                <h2 class="section-title-modern">Clinic Room Requests</h2>
+                <p class="section-subtitle">Manage synchronized appointments from the clinic system</p>
+            </div>
+        </div>
+        <div class="section-actions-modern">
+            <span class="status-count-badge badge-primary">
+                <i class="fas fa-sync-alt"></i> <?php echo e($clinicSyncs->count()); ?> Pending Syncs
+            </span>
+        </div>
+    </div>
+
+    <div class="modern-table-container">
+        <table class="modern-admin-table">
+            <thead>
+                <tr>
+                    <th class="table-col-facility"><i class="fas fa-building"></i> Facility</th>
+                    <th class="table-col-guest"><i class="fas fa-user"></i> Patient</th>
+                    <th class="table-col-contact"><i class="fas fa-envelope"></i> Contact</th>
+                    <th class="table-col-description"><i class="fas fa-align-left"></i> Clinic Notes</th>
+                    <th class="table-col-actions"><i class="fas fa-cog"></i> Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php $__empty_1 = true; $__currentLoopData = $clinicSyncs; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $sync): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                <tr>
+                    <td>
+                        <div class="facility-info">
+                            <div class="facility-name"><?php echo e($sync->facility->name ?? 'N/A'); ?></div>
+                            <div class="facility-meta">
+                                <span class="facility-meta-item text-primary"><i class="fas fa-tag"></i> Clinic Reservation</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="guest-info">
+                            <div class="guest-name"><?php echo e(str_replace('CLINIC: ', '', $sync->guest_name)); ?></div>
+                            <div class="guest-date"><?php echo e(\Carbon\Carbon::parse($sync->requested_date)->format('M d, Y')); ?></div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="contact-info">
+                            <a href="mailto:<?php echo e($sync->guest_contact); ?>" class="contact-link">
+                                <i class="fas fa-at"></i> <?php echo e($sync->guest_contact); ?>
+
+                            </a>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="description-content" title="<?php echo e($sync->description); ?>">
+                            <?php echo e(Str::limit($sync->description, 50)); ?>
+
+                        </div>
+                    </td>
+                    <td>
+                        <div class="action-buttons-modern">
+                            <button type="button" class="action-btn" style="background: var(--background-tertiary); color: var(--hcc-blue);" data-bs-toggle="modal" data-bs-target="#detailsModal<?php echo e($sync->id); ?>">
+                                <i class="fas fa-eye"></i><span>Details</span>
+                            </button>
+                            
+                            <form action="<?php echo e(route('reservations.approve', $sync->id)); ?>" method="POST" class="inline-form-modern">
+                                <?php echo csrf_field(); ?>
+                                <input type="hidden" name="available_date" value="<?php echo e($sync->requested_date); ?>">
+                                <button type="submit" class="action-btn action-approve" onclick="return confirm('Confirm this clinic appointment?')">
+                                    <i class="fas fa-check"></i><span>Approve</span>
+                                </button>
+                            </form>
+
+                            <form action="<?php echo e(route('reservations.reject', $sync->id)); ?>" method="POST" class="inline-form-modern">
+                                <?php echo csrf_field(); ?>
+                                <button type="submit" class="action-btn action-reject" onclick="return confirm('Reject this clinic request?')">
+                                    <i class="fas fa-times"></i><span>Reject</span>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
+                <tr class="no-results-row">
+                    <td colspan="5">
+                        <i class="fas fa-calendar-check"></i>
+                        No pending clinic synchronization requests found.
+                    </td>
+                </tr>
+                <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
+</div>
+<?php $__currentLoopData = $clinicSyncs; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $sync): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+<div class="modal fade" id="detailsModal<?php echo e($sync->id); ?>" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-xl);">
+            <div class="modal-header" style="background: var(--hcc-blue); color: white; border-radius: var(--radius-xl) var(--radius-xl) 0 0;">
+                <h5 class="modal-title font-weight-bold"><i class="fas fa-user-medical mr-2"></i>Patient Information</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row p-3 rounded mb-3" style="background: var(--background-secondary); border: 1px solid var(--border-light);">
+                    <div class="col-6 mb-3">
+                        <small class="text-muted d-block text-uppercase font-weight-bold" style="font-size: 0.65rem;">Patient Name</small>
+                        <span class="font-weight-bold text-dark"><?php echo e(str_replace('CLINIC: ', '', $sync->guest_name)); ?></span>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <small class="text-muted d-block text-uppercase font-weight-bold" style="font-size: 0.65rem;">Email Address</small>
+                        <span class="text-dark"><?php echo e($sync->guest_contact); ?></span>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted d-block text-uppercase font-weight-bold" style="font-size: 0.65rem;">Requested Date</small>
+                        <span class="font-weight-bold text-dark"><?php echo e(\Carbon\Carbon::parse($sync->requested_date)->format('M d, Y')); ?></span>
+                    </div>
+                 <div class="col-6">
+    <small class="text-muted d-block text-uppercase font-weight-bold" style="font-size: 0.65rem;">Actual Time</small>
+    <span class="font-weight-bold text-primary">
+        <?php if(isset($sync->actual_appointment_time) && $sync->actual_appointment_time): ?>
+            
+            <?php echo e(\Carbon\Carbon::createFromFormat('H:i:s', $sync->actual_appointment_time)->format('h:i A')); ?>
+
+        <?php else: ?>
+            
+            <?php echo e(\Carbon\Carbon::parse($sync->created_at)->format('h:i A')); ?>
+
+        <?php endif; ?>
+    </span>
+</div>
+                </div>
+                <label class="small text-muted font-weight-bold text-uppercase" style="font-size: 0.65rem;">Reason for Visit / Clinic Notes</label>
+                <div class="border rounded p-3 bg-white shadow-sm small italic text-dark">
+                    "<?php echo e($sync->description); ?>"
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-link text-muted" data-bs-dismiss="modal">Close</button>
+                <form action="<?php echo e(route('reservations.approve', $sync->id)); ?>" method="POST">
+                    <?php echo csrf_field(); ?>
+                    <input type="hidden" name="available_date" value="<?php echo e($sync->requested_date); ?>">
+                    <button type="submit" class="btn btn-success px-4 font-weight-bold" style="border-radius: var(--radius-md);">Approve Now</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
  
     <!-- Approve Modals -->
     <?php $__currentLoopData = $pendingReservations; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $reservation): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
@@ -372,124 +522,162 @@
  
     <!-- ===== MY FACILITIES ===== -->
     <div class="modern-section-card" id="facilities-section">
-        <div class="section-header-modern">
-            <div class="section-title-container">
-                <div class="section-title-icon"><i class="fas fa-building"></i></div>
-                <div class="section-title-content">
-                    <h2 class="section-title-modern">My Facilities</h2>
-                    <p class="section-subtitle">Manage all your facility listings</p>
+    <div class="section-header-modern">
+        <div class="section-title-container">
+            <div class="section-title-icon"><i class="fas fa-building"></i></div>
+            <div class="section-title-content">
+                <h2 class="section-title-modern">My Facilities</h2>
+                <p class="section-subtitle">Manage all your facility listings</p>
+            </div>
+        </div>
+        <div class="section-actions-modern">
+            <a href="<?php echo e(route('facilities.create')); ?>" class="primary-action-btn"><i class="fas fa-plus"></i><span>Add New Facility</span></a>
+        </div>
+    </div>
+
+    <?php if($facilities->count() > 0): ?>
+    <div class="facilities-search-bar">
+        <div class="search-input-wrapper" style="flex:1;min-width:200px;">
+            <i class="fas fa-search"></i>
+            <input type="text" class="section-search-input" id="facilitiesSearch" placeholder="Search by name or location…">
+            <button class="clear-search" id="facilitiesClear"><i class="fas fa-times"></i></button>
+        </div>
+        <select class="section-filter-select" id="facilitiesStatusFilter">
+            <option value="all">All Status</option>
+            <option value="active">Available</option>
+            <option value="reserved">Reserved</option>
+            <option value="pending">With Pending Req.</option>
+            <option value="inactive">Inactive</option>
+        </select>
+        <div class="search-results-count" id="facilitiesCount"></div>
+    </div>
+
+    <div class="facilities-grid-modern" id="facilitiesGrid">
+        <?php $__currentLoopData = $facilities; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $facility): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+        <?php
+            // Logic to determine status
+            $isReserved = $facility->reservations->where('status', 'approved')->count() > 0;
+            $hasPending = $facility->reservations->where('status', 'pending')->count() > 0;
+            
+            // Determine Visual Status
+            $displayStatus = 'active';
+            if ($isReserved) {
+                $displayStatus = 'reserved';
+            } elseif ($hasPending) {
+                $displayStatus = 'pending';
+            } elseif ($facility->status !== 'active') {
+                $displayStatus = 'inactive';
+            }
+
+            $maxRequested = $facility->reservations->max('estimated_participants') ?? 0;
+            $isOverCapacity = $maxRequested > $facility->capacity;
+            $chairsNeeded = $isOverCapacity ? ($maxRequested - $facility->capacity) : 0;
+        ?>
+
+        <div class="facility-card-modern facility-card-item <?php echo e($isOverCapacity ? 'border-danger' : ''); ?> status-<?php echo e($displayStatus); ?>"
+             data-name="<?php echo e(strtolower($facility->name)); ?>"
+             data-location="<?php echo e(strtolower($facility->location)); ?>"
+             data-status="<?php echo e($displayStatus); ?>">
+            
+            <div class="facility-card-header">
+                <div class="facility-status-indicator">
+                    <?php if($displayStatus === 'reserved'): ?>
+                        <div class="status-dot" style="background-color: #ef4444;"></div>
+                        <span class="status-text text-danger">Reserved</span>
+                    <?php elseif($displayStatus === 'pending'): ?>
+                        <div class="status-dot" style="background-color: #f59e0b;"></div>
+                        <span class="status-text text-warning">Pending Review</span>
+                    <?php elseif($displayStatus === 'active'): ?>
+                        <div class="status-dot status-dot-active"></div>
+                        <span class="status-text">Available</span>
+                    <?php else: ?>
+                        <div class="status-dot status-dot-inactive"></div>
+                        <span class="status-text">Inactive</span>
+                    <?php endif; ?>
                 </div>
-            </div>
-            <div class="section-actions-modern">
-                <a href="<?php echo e(route('facilities.create')); ?>" class="primary-action-btn"><i class="fas fa-plus"></i><span>Add New Facility</span></a>
-            </div>
-        </div>
- 
-        <?php if($facilities->count() > 0): ?>
-        <div class="facilities-search-bar">
-            <div class="search-input-wrapper" style="flex:1;min-width:200px;">
-                <i class="fas fa-search"></i>
-                <input type="text" class="section-search-input" id="facilitiesSearch" placeholder="Search by name or location…">
-                <button class="clear-search" id="facilitiesClear"><i class="fas fa-times"></i></button>
-            </div>
-            <select class="section-filter-select" id="facilitiesStatusFilter">
-                <option value="all">All Status</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-            </select>
-            <div class="search-results-count" id="facilitiesCount"></div>
-        </div>
- 
-        <div class="facilities-grid-modern" id="facilitiesGrid">
-            <?php $__currentLoopData = $facilities; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $facility): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-            <?php
-                $maxRequested = $facility->reservations->max('estimated_participants') ?? 0;
-                $isOverCapacity = $maxRequested > $facility->capacity;
-                $chairsNeeded = $isOverCapacity ? ($maxRequested - $facility->capacity) : 0;
-            ?>
-            <div class="facility-card-modern facility-card-item <?php echo e($isOverCapacity ? 'border-danger' : ''); ?>"
-                 data-name="<?php echo e(strtolower($facility->name)); ?>"
-                 data-location="<?php echo e(strtolower($facility->location)); ?>"
-                 data-status="<?php echo e(strtolower($facility->status)); ?>">
-                <div class="facility-card-header">
-                    <div class="facility-status-indicator">
-                        <?php if($facility->status === 'active'): ?>
-                            <div class="status-dot status-dot-active"></div><span class="status-text">Active</span>
-                        <?php else: ?>
-                            <div class="status-dot status-dot-inactive"></div><span class="status-text">Inactive</span>
+
+                <?php if($isOverCapacity): ?>
+                    <div class="badge bg-danger pulse-animation"><i class="fas fa-exclamation-triangle"></i> Needs <?php echo e($chairsNeeded); ?> Chairs</div>
+                <?php endif; ?>
+
+                <div class="facility-actions-dropdown">
+                    <button class="dropdown-toggle-btn"><i class="fas fa-ellipsis-v"></i></button>
+                    <div class="dropdown-menu-facility">
+                        <a href="<?php echo e(route('facilities.edit', $facility)); ?>" class="dropdown-item"><i class="fas fa-edit"></i><span>Edit Facility</span></a>
+                        <?php if(!$facility->reservations()->exists()): ?>
+                        <form action="<?php echo e(route('facilities.destroy', $facility)); ?>" method="POST" class="dropdown-item-form">
+                            <?php echo csrf_field(); ?> <?php echo method_field('DELETE'); ?>
+                            <button type="submit" class="dropdown-item dropdown-item-danger" onclick="return confirm('Are you sure?')"><i class="fas fa-trash"></i><span>Delete</span></button>
+                        </form>
                         <?php endif; ?>
                     </div>
-                    <?php if($isOverCapacity): ?>
-                        <div class="badge bg-danger pulse-animation"><i class="fas fa-exclamation-triangle"></i> Needs <?php echo e($chairsNeeded); ?> Chairs</div>
-                    <?php endif; ?>
-                    <div class="facility-actions-dropdown">
-                        <button class="dropdown-toggle-btn"><i class="fas fa-ellipsis-v"></i></button>
-                        <div class="dropdown-menu-facility">
-                            <a href="<?php echo e(route('facilities.edit', $facility)); ?>" class="dropdown-item"><i class="fas fa-edit"></i><span>Edit Facility</span></a>
-                            <?php if(!$facility->reservations()->exists()): ?>
-                            <form action="<?php echo e(route('facilities.destroy', $facility)); ?>" method="POST" class="dropdown-item-form">
-                                <?php echo csrf_field(); ?> <?php echo method_field('DELETE'); ?>
-                                <button type="submit" class="dropdown-item dropdown-item-danger" onclick="return confirm('Are you sure?')"><i class="fas fa-trash"></i><span>Delete</span></button>
-                            </form>
-                            <?php endif; ?>
-                        </div>
+                </div>
+            </div>
+
+            <div class="facility-card-body">
+                <?php if($facility->thumbnail): ?>
+                <div class="facility-thumbnail mb-3" style="<?php echo e($isReserved ? 'filter: grayscale(0.8); opacity: 0.7;' : ''); ?>">
+                    <img src="<?php echo e(asset(Str::start($facility->thumbnail, '/'))); ?>" 
+                         alt="<?php echo e($facility->name); ?>" 
+                         style="width:100%; border-radius:12px; max-height:160px; object-fit:cover;">
+                </div>
+                <?php endif; ?>
+                
+                <h3 class="facility-name-modern"><?php echo e($facility->name); ?></h3>
+                <div class="facility-location"><i class="fas fa-map-marker-alt"></i><span><?php echo e($facility->location); ?></span></div>
+                
+                <div class="facility-details-grid">
+                    <div class="detail-item">
+                        <div class="detail-icon"><i class="fas fa-users"></i></div>
+                        <div class="detail-content"><div class="detail-value"><?php echo e($facility->capacity); ?></div><div class="detail-label">Capacity</div></div>
+                    </div>
+                    <div class="detail-item <?php echo e($isOverCapacity ? 'text-danger fw-bold' : ''); ?>">
+                        <div class="detail-icon"><i class="fas <?php echo e($isOverCapacity ? 'fa-chair text-danger' : 'fa-clock'); ?>"></i></div>
+                        <div class="detail-content"><div class="detail-value"><?php echo e($isOverCapacity ? $maxRequested : $facility->available_hours); ?></div><div class="detail-label"><?php echo e($isOverCapacity ? 'Max Req.' : 'Hours'); ?></div></div>
                     </div>
                 </div>
-                <div class="facility-card-body">
-                    <?php if($facility->thumbnail): ?>
-    <div class="facility-thumbnail mb-3">
-        
-        <img src="<?php echo e(asset(Str::start($facility->thumbnail, '/'))); ?>" 
-             alt="<?php echo e($facility->name); ?>" 
-             style="width:100%; border-radius:12px; max-height:160px; object-fit:cover;">
-    </div>
-<?php endif; ?>
-                    <h3 class="facility-name-modern"><?php echo e($facility->name); ?></h3>
-                    <div class="facility-location"><i class="fas fa-map-marker-alt"></i><span><?php echo e($facility->location); ?></span></div>
-                    <div class="facility-details-grid">
-                        <div class="detail-item">
-                            <div class="detail-icon"><i class="fas fa-users"></i></div>
-                            <div class="detail-content"><div class="detail-value"><?php echo e($facility->capacity); ?></div><div class="detail-label">Capacity</div></div>
-                        </div>
-                        <div class="detail-item <?php echo e($isOverCapacity ? 'text-danger fw-bold' : ''); ?>">
-                            <div class="detail-icon"><i class="fas <?php echo e($isOverCapacity ? 'fa-chair text-danger' : 'fa-clock'); ?>"></i></div>
-                            <div class="detail-content"><div class="detail-value"><?php echo e($isOverCapacity ? $maxRequested : $facility->available_hours); ?></div><div class="detail-label"><?php echo e($isOverCapacity ? 'Max Req.' : 'Hours'); ?></div></div>
-                        </div>
-                    </div>
+            </div>
+
+            <div class="facility-card-footer">
+                <div class="reservation-count">
+                    <i class="fas fa-calendar"></i>
+                    <span><?php echo e($facility->reservations->count()); ?> Records</span>
                 </div>
-                <div class="facility-card-footer">
-                    <div class="reservation-count"><i class="fas fa-calendar"></i><span><?php echo e($facility->reservations->count()); ?></span></div>
-                    <div class="footer-actions">
+                <div class="footer-actions">
+                    <?php if($isReserved): ?>
+                        <span class="badge bg-light text-dark border"><i class="fas fa-lock"></i> Occupied</span>
+                    <?php else: ?>
                         <?php if($isOverCapacity): ?>
-                            <a href="<?php echo e(route('chairs.order', ['facility'=>$facility->id,'needed'=>$chairsNeeded])); ?>" class="btn-add-chairs text-decoration-none">
-                                <i class="fas fa-shopping-cart"></i> Add Chairs
+                            <a href="<?php echo e(route('chairs.order', ['facility'=>$facility->id,'needed'=>$chairsNeeded])); ?>" class="btn-add-chairs text-decoration-none me-2">
+                                <i class="fas fa-shopping-cart"></i>
                             </a>
                         <?php endif; ?>
                         <a href="<?php echo e(route('facilities.edit', $facility)); ?>" class="edit-facility-btn"><i class="fas fa-cog"></i> Manage</a>
-                    </div>
+                    <?php endif; ?>
                 </div>
             </div>
-            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
         </div>
- 
-        <div id="facilitiesNoResults" style="display:none;text-align:center;padding:40px 20px;color:#94a3b8;">
-            <i class="fas fa-search" style="font-size:32px;display:block;margin-bottom:10px;color:#cbd5e1;"></i>
-            <p style="font-size:15px;margin:0;">No facilities match your search.</p>
-        </div>
- 
-        <div class="facilities-pagination" id="facilitiesPagination">
-            <div class="pagination-info-text" id="facilitiesPaginationInfo"></div>
-            <div class="pagination-buttons" id="facilitiesPaginationBtns"></div>
-        </div>
- 
-        <?php else: ?>
-        <div class="empty-state-modern">
-            <i class="fas fa-building fa-3x mb-3"></i>
-            <h3>No Facilities Yet</h3>
-            <a href="<?php echo e(route('facilities.create')); ?>" class="primary-action-btn mt-3">Create First Facility</a>
-        </div>
-        <?php endif; ?>
+        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
     </div>
+
+    <div id="facilitiesNoResults" style="display:none;text-align:center;padding:40px 20px;color:#94a3b8;">
+        <i class="fas fa-search" style="font-size:32px;display:block;margin-bottom:10px;color:#cbd5e1;"></i>
+        <p style="font-size:15px;margin:0;">No facilities match your search.</p>
+    </div>
+
+    <div class="facilities-pagination" id="facilitiesPagination">
+        <div class="pagination-info-text" id="facilitiesPaginationInfo"></div>
+        <div class="pagination-buttons" id="facilitiesPaginationBtns"></div>
+    </div>
+
+    <?php else: ?>
+    <div class="empty-state-modern">
+        <i class="fas fa-building fa-3x mb-3"></i>
+        <h3>No Facilities Yet</h3>
+        <a href="<?php echo e(route('facilities.create')); ?>" class="primary-action-btn mt-3">Create First Facility</a>
+    </div>
+    <?php endif; ?>
+</div>
  
     <!-- Google Calendar Section -->
     <div class="modern-section-card" id="google-calendar">
@@ -677,6 +865,39 @@
             setTimeout(() => toast.remove(), 500);
         }, 4000);
     });
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Approve Confirmation
+    document.querySelectorAll('.btn-approve').forEach(btn => {
+        btn.onclick = function() {
+            Swal.fire({
+                title: 'Approve Reservation?',
+                text: "This will confirm the clinic appointment for " + this.dataset.name,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#28a745',
+                confirmButtonText: 'Yes, Approve'
+            }).then((result) => { if (result.isConfirmed) this.parentElement.submit(); });
+        };
+    });
+
+    // Reject Confirmation
+    document.querySelectorAll('.btn-reject').forEach(btn => {
+        btn.onclick = function() {
+            Swal.fire({
+                title: 'Reject Reservation?',
+                text: "Are you sure you want to decline " + this.dataset.name + "?",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                confirmButtonText: 'Yes, Reject'
+            }).then((result) => { if (result.isConfirmed) this.parentElement.submit(); });
+        };
+    });
+});
 </script>
  
 <script>

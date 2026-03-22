@@ -38,7 +38,6 @@ Route::get('/login/resend', [LoginController::class, 'resendOtp'])->name('login.
 // --- PUBLIC RESERVATION & CONTACT ROUTES ---
 Route::get('/reservations/create', [ReservationController::class, 'create'])->name('reservations.create');
 Route::post('/reservations', [ReservationController::class, 'store'])->name('reservations.store');
-// Corrected: Messages logic (assuming this was your intended use)
 Route::post('/messages', [MessagesController::class, 'store'])->name('messages.store');
 
 
@@ -72,11 +71,24 @@ Route::middleware(['auth'])->group(function () {
 
     // Reservation Management
     Route::delete('/reservations/{reservation}', [ReservationController::class, 'destroy'])->name('reservations.destroy');
+    
+    /**
+     * UPDATED: Reservation Show 
+     * This handles the "View Details" data retrieval for both Users and Admins
+     */
     Route::get('/reservations/{reservation}', [ReservationController::class, 'show'])->name('reservations.show');
     
-    // Approve/Reject (Admin only)
+    // --- CLINIC SYNC & APPROVAL (Admin only) ---
     Route::middleware('is.admin')->group(function () {
+        // This specific route handles the Clinic Syncs tab filtering
+        Route::get('/admin/reservations/clinic', [ReservationController::class, 'index'])->name('admin.reservations.clinic');
+        
         Route::post('/reservations/{reservation}/approve', [ReservationController::class, 'approveReservation'])->name('reservations.approve');
+        
+        /**
+         * ADDED: Reject Route
+         * Handles the rejection of clinic and standard reservations
+         */
         Route::post('/reservations/{reservation}/reject', [ReservationController::class, 'rejectReservation'])->name('reservations.reject');
     });
 });
